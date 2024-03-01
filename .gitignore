@@ -1,3 +1,4 @@
 credentials.json
 .venv
 refresh_token.json
+google-ads.yaml

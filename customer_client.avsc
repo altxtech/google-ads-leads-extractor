@@ -1,0 +1,12 @@
+{"namespace": "example.avro",
+ "type": "record",
+ "name": "User",
+ "fields": [
+     {"name": "resource_name", "type": "string"},
+     {"name": "client_customer", "type": "string"},
+     {"name": "level",  "type": "int"},
+     {"name": "manager", "type": "boolean"},
+     {"name": "id", "type": "string"}
+ ]
+}
+

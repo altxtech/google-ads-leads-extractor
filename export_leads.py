@@ -9,6 +9,7 @@ import shutil
 import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
+from google.cloud import storage
 
 client = GoogleAdsClient.load_from_storage("google-ads.yaml")
 
@@ -34,7 +35,30 @@ def setup_data_folder():
     
     else:
         os.mkdir("data")
-        
+
+def clear_gcs_bucket(bucket_name):
+    """Uploads a file to the bucket."""
+
+    storage_client = storage.Client()
+
+    blobs = storage_client.list_blobs(bucket_name)
+    for blob in blobs:
+        blob.delete()
+    print(f"All contents of {bucket_name} have been deleted")
+
+    
+def upload_blob(bucket_name, source_file_name, destination_blob_name):
+    """Uploads a file to the bucket."""
+
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+    blob.upload_from_filename(source_file_name)
+
+    print(
+        f"File {source_file_name} uploaded to {destination_blob_name}."
+    )
+
 
 def main(client, manager_customer_id):
 
@@ -78,12 +102,14 @@ def main(client, manager_customer_id):
         writer.close()
         batch_counter += 1
 
-    # Testing. Check if write was successful
-    print("Testing write")
-    reader = DataFileReader(open("data/customer_client_0.avro", "rb"), DatumReader())
-    for obj in reader:
-        print(obj)
-    reader.close()
+    # Delete old files from  GCS
+    clear_gcs_bucket(os.environ["BUCKET_NAME"])
+
+    # Upload all avro files to google cloud storage
+    for filename in os.listdir("data"):
+        src_path = os.path.join("data", filename)
+        upload_blob(os.environ["BUCKET_NAME"], src_path, filename)
+
 
 
 if __name__ == "__main__":

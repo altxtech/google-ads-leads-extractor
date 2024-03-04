@@ -10,8 +10,34 @@ import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
 from google.cloud import storage
+from google.cloud import secretmanager
+import functions_framework
+from markupsafe import escape
 
-client = GoogleAdsClient.load_from_storage("google-ads.yaml")
+
+
+@functions_framework.http
+def main(request):
+
+    # Create Google Ads client
+    config = load_google_ads_creds()
+    client = GoogleAdsClient.load_from_string(config)
+
+    for id in request.args["customer_id"]:
+        extract_leads(client, id)
+
+    return "Done"
+
+def load_google_ads_creds():
+    # Load from secretm manager
+    client = secretmanager.SecretManagerServiceClient()
+    response = client.access_secret_version(request={"name": f"{os.environ['SECRET_NAME']}:latest"})
+
+    payload = response.payload.data.decode("UTF-8")
+    return payload
+
+
+
 
 def validate_args(args):
     if len(args) != 2:
@@ -60,7 +86,8 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
     )
 
 
-def main(client, manager_customer_id):
+
+def extract_leads(client, manager_customer_id):
 
     # Prepare the data folder
     setup_data_folder()
@@ -108,11 +135,4 @@ def main(client, manager_customer_id):
     # Upload all avro files to google cloud storage
     for filename in os.listdir("data"):
         src_path = os.path.join("data", filename)
-        upload_blob(os.environ["BUCKET_NAME"], src_path, filename)
-
-
-
-if __name__ == "__main__":
-    validate_args(argv)
-    customer_id = parse_customer_id(argv[1])
-    main(client, customer_id)
+        upload_blob(os.environ["BUCKET_NAME"], src_path, filename)    

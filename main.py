@@ -26,8 +26,8 @@ def main(request):
     config = load_google_ads_creds()
     client = GoogleAdsClient.load_from_string(config)
 
-    for id in request.args["customer_id"]:
-        extract_leads(client, id)
+    customer_id = request.args["customer_id"].replace("-","")
+    extract_leads(client, customer_id)
 
     return "Done"
 

@@ -14,6 +14,9 @@ from google.cloud import secretmanager
 import functions_framework
 from markupsafe import escape
 
+SECRET_ID = os.environ["SECRET_ID"]
+BUCKET_NAME = os.environ["BUCKET_NAME"]
+
 
 
 @functions_framework.http
@@ -31,7 +34,7 @@ def main(request):
 def load_google_ads_creds():
     # Load from secretm manager
     client = secretmanager.SecretManagerServiceClient()
-    response = client.access_secret_version(request={"name": f"{os.environ['SECRET_NAME']}:latest"})
+    response = client.access_secret_version(request={"name": f"{SECRET_ID}/latest"})
 
     payload = response.payload.data.decode("UTF-8")
     return payload
@@ -135,4 +138,4 @@ def extract_leads(client, manager_customer_id):
     # Upload all avro files to google cloud storage
     for filename in os.listdir("data"):
         src_path = os.path.join("data", filename)
-        upload_blob(os.environ["BUCKET_NAME"], src_path, filename)    
+        upload_blob(BUCKET_NAME, src_path, filename)    

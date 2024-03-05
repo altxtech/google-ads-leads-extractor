@@ -34,7 +34,7 @@ def main(request):
 def load_google_ads_creds():
     # Load from secretm manager
     client = secretmanager.SecretManagerServiceClient()
-    response = client.access_secret_version(request={"name": f"{SECRET_ID}/latest"})
+    response = client.access_secret_version(request={"name": f"{SECRET_ID}/versions/latest"})
 
     payload = response.payload.data.decode("UTF-8")
     return payload

@@ -1,0 +1,9 @@
+{"namespace": "example.avro",
+ "type": "record",
+ "name": "Lead",
+ "fields": [
+     {"name": "id", "type": "string"},
+     {"name": "ad_id", "type": "string"}
+ ]
+}
+

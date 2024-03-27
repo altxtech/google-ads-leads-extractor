@@ -26,7 +26,7 @@ def main(request):
     config = load_google_ads_creds()
     client = GoogleAdsClient.load_from_string(config)
 
-    customer_id = request.args["customer_id"].replace("-","")
+    customer_id = parse_customer_id(request.args["customerId"])
     extract_leads(client, customer_id)
 
     return "Done"
@@ -38,14 +38,6 @@ def load_google_ads_creds():
 
     payload = response.payload.data.decode("UTF-8")
     return payload
-
-
-
-
-def validate_args(args):
-    if len(args) != 2:
-        print("Usage: create_test_account.py <custormer account id>")
-        sys.exit()
 
 def parse_customer_id(customer_id):
     return customer_id.replace("-", "")
@@ -96,18 +88,15 @@ def extract_leads(client, manager_customer_id):
     setup_data_folder()
 
     # Setup avro writer
-    schema = avro.schema.parse(open("customer_client.avsc", "rb").read())
+    schema = avro.schema.parse(open("lead_data.avsc", "rb").read())
 
     service = client.get_service("GoogleAdsService", version="v16")
 
     query = """
-                SELECT
-                    customer_client.client_customer,
-                    customer_client.level,
-                    customer_client.manager,
-                    customer_client.id
-                FROM customer_client
-                WHERE customer_client.manager != True
+        SELECT 
+            lead_form_submission_data.id, 
+            ad_group_ad.ad.id 
+        FROM lead_form_submission_data
             """
 
     search_request = client.get_type("SearchGoogleAdsStreamRequest")
@@ -118,16 +107,13 @@ def extract_leads(client, manager_customer_id):
     batch_counter = 0
     for batch in response:
 
-        file_path = f"data/customer_client_{batch_counter}.avro"
+        file_path = f"data/lead_data_{batch_counter}.avro"
         writer = writer = DataFileWriter(open(file_path, "wb"), DatumWriter(), schema)
         for row in batch.results:
             print(row)
             writer.append({
-                "resource_name": row.customer_client.resource_name,
-                "client_customer": row.customer_client.client_customer,
-                "level": row.customer_client.level,
-                "manager": row.customer_client.manager,
-                "id": str(row.customer_client.id)
+                "id": row.lead_form_submission_data.id,
+                "ad_id": row.ad_group_ad.id
                 })
         writer.close()
         batch_counter += 1

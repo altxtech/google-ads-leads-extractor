@@ -3,3 +3,4 @@ credentials.json
 refresh_token.json
 google-ads.yaml
 data
+*.env
